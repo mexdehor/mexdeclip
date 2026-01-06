@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { CirclePause, CirclePlay, Copy, Trash2 } from "lucide-react";
 
 type ClipboardItem = {
   id: string;
@@ -134,62 +135,74 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
+    <div className="text-white flex flex-col h-full">
+      <header className="flex justify-between items-center p-4">
         <h1>Clipboard Manager</h1>
-        <div className="header-actions">
+
+        <div className="flex items-center gap-2">
           <button
-            className={`toggle-btn ${isMonitoring ? "active" : ""}`}
             onClick={() => setIsMonitoring(!isMonitoring)}
             title={isMonitoring ? "Monitoring active" : "Monitoring paused"}
           >
-            {isMonitoring ? "●" : "○"}
+            {isMonitoring ? (
+              <CirclePlay className="size-4" />
+            ) : (
+              <CirclePause className="size-4" />
+            )}
           </button>
+
           {clipboardHistory.length > 0 && (
-            <button className="clear-btn" onClick={handleClearAll}>
-              Clear All
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="size-4" />
             </button>
           )}
         </div>
       </header>
 
-      <div className="clipboard-content">
+      <div className="flex-1 overflow-y-auto p-4">
         {clipboardHistory.length === 0 ? (
-          <div className="empty-state">
-            <p>No clipboard history yet.</p>
-            <p className="empty-hint">
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-sm text-gray-500">No clipboard history yet.</p>
+            <p className="text-sm text-gray-500">
               Copy something to start tracking your clipboard!
             </p>
           </div>
         ) : (
-          <div className="clipboard-list">
+          <ul className="flex flex-col gap-6">
             {clipboardHistory.map((item) => (
-              <div key={item.id} className="clipboard-item">
-                <div className="item-content">
-                  <p className="item-text">{truncateText(item.text)}</p>
-                  <span className="item-time">
+              <li
+                key={item.id}
+                className="flex items-center justify-between rounded-md p-4 bg-neutral-950"
+              >
+                <div className="flex flex-col gap-2">
+                  <p className="">{truncateText(item.text)}</p>
+                  <span className="text-xs text-gray-500">
                     {formatTime(item.timestamp)}
                   </span>
                 </div>
-                <div className="item-actions">
+
+                <div className="flex items-center gap-2">
                   <button
-                    className="copy-btn"
+                    className="text-sm text-gray-500"
                     onClick={() => handleCopy(item.text)}
                     title="Copy to clipboard"
                   >
-                    Copy
+                    <Copy className="size-4 cursor-pointer" />
                   </button>
                   <button
-                    className="delete-btn"
+                    className="text-sm text-gray-500"
                     onClick={() => handleDelete(item.id)}
                     title="Delete from history"
                   >
-                    ×
+                    <Trash2 className="size-4 cursor-pointer" />
                   </button>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>
