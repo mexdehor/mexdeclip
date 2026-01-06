@@ -137,8 +137,6 @@ function App() {
   return (
     <div className="text-white flex flex-col h-full">
       <header className="flex justify-between items-center p-4">
-        <h1>Clipboard Manager</h1>
-
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMonitoring(!isMonitoring)}
