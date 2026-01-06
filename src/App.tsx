@@ -143,20 +143,21 @@ function App() {
           <button
             onClick={() => setIsMonitoring(!isMonitoring)}
             title={isMonitoring ? "Monitoring active" : "Monitoring paused"}
+            className="cursor-pointer"
           >
             {isMonitoring ? (
-              <CirclePlay className="size-4" />
+              <CirclePlay className="size-5 text-neutral-600" />
             ) : (
-              <CirclePause className="size-4" />
+              <CirclePause className="size-5 text-neutral-600" />
             )}
           </button>
 
           {clipboardHistory.length > 0 && (
             <button
               onClick={handleClearAll}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 cursor-pointer"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-5 text-neutral-600" />
             </button>
           )}
         </div>
