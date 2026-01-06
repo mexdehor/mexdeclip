@@ -13,7 +13,7 @@
     "windows": [
       {
         "title": "ohcp",
-        "width": 800,
+        "width": 400,
         "height": 600,
         "visible": false,
         "skipTaskbar": true
