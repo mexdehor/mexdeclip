@@ -2035,6 +2035,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "mexdeclip"
+version = "0.1.0"
+dependencies = [
+ "arboard",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tokio",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2394,19 +2407,6 @@ dependencies = [
  "objc2-foundation",
  "objc2-javascript-core",
  "objc2-security",
-]
-
-[[package]]
-name = "ohcp"
-version = "0.1.0"
-dependencies = [
- "arboard",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tokio",
 ]
 
 [[package]]

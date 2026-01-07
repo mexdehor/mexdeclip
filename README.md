@@ -1,4 +1,4 @@
-# Oh My Clipboard (ohcp)
+# Mexdehor Clipboard Manager
 
 A clipboard manager built with Tauri, React, and TypeScript. Tracks your clipboard history and provides quick access to previously copied items.
 
