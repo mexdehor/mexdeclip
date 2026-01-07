@@ -12,7 +12,6 @@ use tauri::Manager;
 
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .manage(ClipboardManager::new())
         .setup(|app| {
             // Log environment info

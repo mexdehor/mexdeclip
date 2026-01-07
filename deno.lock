@@ -1008,6 +1008,13 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@semantic-release/changelog@^6.0.3",
+        "npm:@semantic-release/commit-analyzer@13",
+        "npm:@semantic-release/exec@^6.0.3",
+        "npm:@semantic-release/git@^10.0.1",
+        "npm:@semantic-release/github@^9.2.6",
+        "npm:@semantic-release/npm@^11.0.2",
+        "npm:@semantic-release/release-notes-generator@^12.1.0",
         "npm:@tailwindcss/vite@^4.1.18",
         "npm:@tauri-apps/api@2",
         "npm:@tauri-apps/cli@2",
@@ -1018,6 +1025,7 @@
         "npm:lucide-react@0.562",
         "npm:react-dom@^19.1.0",
         "npm:react@^19.1.0",
+        "npm:semantic-release@23",
         "npm:tailwindcss@^4.1.18",
         "npm:typescript@~5.8.3",
         "npm:vite@^7.0.4"
