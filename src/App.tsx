@@ -1,7 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
-import { CirclePause, CirclePlay, Copy, Trash2 } from "lucide-react";
+import {
+  CirclePause,
+  CirclePlay,
+  Copy,
+  Trash2,
+  AlertCircle,
+  X,
+} from "lucide-react";
 
 type ClipboardItem = {
   id: string;
@@ -9,44 +16,95 @@ type ClipboardItem = {
   timestamp: Date;
 };
 
+type ClipboardError = {
+  id: string;
+  message: string;
+  timestamp: Date;
+  retryable: boolean;
+};
+
 function App() {
   const [clipboardHistory, setClipboardHistory] = useState<ClipboardItem[]>([]);
-  const [currentClipboard, setCurrentClipboard] = useState<string>("");
+  const [, setCurrentClipboard] = useState<string>("");
   const [isMonitoring, setIsMonitoring] = useState<boolean>(true);
+  const [error, setError] = useState<ClipboardError | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<number>(750);
+  const previousClipboardRef = useRef<string>("");
+  const consecutiveErrorsRef = useRef<number>(0);
+
+  const logError = useCallback((context: string, error: unknown) => {
+    const timestamp = new Date().toISOString();
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[${timestamp}] ${context}:`, error);
+    return errorMessage;
+  }, []);
 
   const readClipboard = useCallback(async () => {
     try {
       const text = await invoke<string>("read_clipboard");
-      setCurrentClipboard(text);
-      return text;
+      // Reset error count on successful read
+      consecutiveErrorsRef.current = 0;
+      // Reset polling interval to normal if it was increased due to errors
+      if (pollingInterval > 750) {
+        setPollingInterval(750);
+      }
+      return text || "";
     } catch (error) {
-      console.error("Failed to read clipboard:", error);
+      const errorMessage = logError("Failed to read clipboard", error);
+      consecutiveErrorsRef.current += 1;
+
+      // Increase polling interval exponentially on consecutive errors (max 5 seconds)
+      const newInterval = Math.min(
+        750 * Math.pow(2, consecutiveErrorsRef.current - 1),
+        5000
+      );
+      setPollingInterval(newInterval);
+
+      // Show error to user if it's a significant error
+      if (consecutiveErrorsRef.current >= 2) {
+        setError({
+          id: Date.now().toString(),
+          message: `Clipboard read failed: ${errorMessage}`,
+          timestamp: new Date(),
+          retryable: true,
+        });
+      }
       return "";
     }
-  }, []);
+  }, [logError, pollingInterval]);
 
-  const writeClipboard = useCallback(async (text: string) => {
-    try {
-      // Try browser Clipboard API first (more reliable)
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        setCurrentClipboard(text);
-      } else {
-        // Fallback to Rust command
-        await invoke("write_clipboard", { text });
-        setCurrentClipboard(text);
+  const writeClipboard = useCallback(
+    async (text: string) => {
+      try {
+        // Try browser Clipboard API first (more reliable)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          setCurrentClipboard(text);
+          setError(null);
+          return;
+        }
+      } catch (error) {
+        logError("Browser clipboard API failed", error);
       }
-    } catch (error) {
-      console.error("Failed to write clipboard:", error);
-      // Try Rust fallback if browser API fails
+
+      // Fallback to Rust command
       try {
         await invoke("write_clipboard", { text });
         setCurrentClipboard(text);
+        setError(null);
       } catch (rustError) {
-        console.error("Rust clipboard write also failed:", rustError);
+        const errorMessage = logError("Rust clipboard write failed", rustError);
+        setError({
+          id: Date.now().toString(),
+          message: `Failed to write to clipboard: ${errorMessage}`,
+          timestamp: new Date(),
+          retryable: true,
+        });
+        throw rustError;
       }
-    }
-  }, []);
+    },
+    [logError]
+  );
 
   const addToHistory = useCallback((text: string) => {
     if (!text.trim()) return;
@@ -75,6 +133,8 @@ function App() {
         await writeClipboard(text);
         // Small delay to ensure clipboard is set
         await new Promise((resolve) => setTimeout(resolve, 100));
+        // Update ref to prevent re-detection
+        previousClipboardRef.current = text;
         setCurrentClipboard(text);
       } finally {
         // Restore monitoring state
@@ -97,23 +157,67 @@ function App() {
     setClipboardHistory([]);
   }, []);
 
+  const handleRetryClipboard = useCallback(async () => {
+    try {
+      // Reinitialize clipboard on backend
+      await invoke("reinitialize_clipboard");
+      setError(null);
+      consecutiveErrorsRef.current = 0;
+      setPollingInterval(750);
+      // Try reading immediately after reinitialization
+      const text = await readClipboard();
+      if (text) {
+        previousClipboardRef.current = text;
+        setCurrentClipboard(text);
+      }
+    } catch (error) {
+      const errorMessage = logError("Failed to reinitialize clipboard", error);
+      setError({
+        id: Date.now().toString(),
+        message: `Failed to reinitialize clipboard: ${errorMessage}`,
+        timestamp: new Date(),
+        retryable: true,
+      });
+    }
+  }, [readClipboard, logError]);
+
+  const handleDismissError = useCallback(() => {
+    setError(null);
+  }, []);
+
   // Monitor clipboard changes
   useEffect(() => {
     if (!isMonitoring) return;
 
     const interval = setInterval(async () => {
       const text = await readClipboard();
-      if (text && text !== currentClipboard) {
+      if (text && text !== previousClipboardRef.current) {
+        previousClipboardRef.current = text;
+        setCurrentClipboard(text);
         addToHistory(text);
+        // Clear error on successful read
+        if (error) {
+          setError(null);
+        }
+      } else if (text) {
+        // Update current clipboard even if it's the same (for UI consistency)
+        setCurrentClipboard(text);
       }
-    }, 500); // Check every 500ms
+    }, pollingInterval); // Use dynamic polling interval
 
     return () => clearInterval(interval);
-  }, [isMonitoring, readClipboard, currentClipboard, addToHistory]);
+  }, [isMonitoring, readClipboard, addToHistory, pollingInterval, error]);
 
   // Read initial clipboard
   useEffect(() => {
-    readClipboard();
+    const initClipboard = async () => {
+      const text = await readClipboard();
+      if (text) {
+        previousClipboardRef.current = text;
+        setCurrentClipboard(text);
+      }
+    };
+    initClipboard();
   }, [readClipboard]);
 
   const formatTime = (date: Date) => {
@@ -160,6 +264,36 @@ function App() {
           )}
         </div>
       </header>
+
+      {error && (
+        <div className="mx-4 mb-4 p-3 bg-red-950/50 border border-red-800 rounded-md flex items-start gap-3">
+          <AlertCircle className="size-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-red-200">{error.message}</p>
+            <p className="text-xs text-red-400/70 mt-1">
+              {error.timestamp.toLocaleTimeString()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {error.retryable && (
+              <button
+                onClick={handleRetryClipboard}
+                className="px-2 py-1 text-xs bg-red-800 hover:bg-red-700 rounded cursor-pointer text-red-100"
+                title="Retry clipboard operation"
+              >
+                Retry
+              </button>
+            )}
+            <button
+              onClick={handleDismissError}
+              className="cursor-pointer text-red-400 hover:text-red-300"
+              title="Dismiss error"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         {clipboardHistory.length === 0 ? (
