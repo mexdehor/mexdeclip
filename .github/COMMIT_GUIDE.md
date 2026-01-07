@@ -12,17 +12,17 @@
 
 ## Commit Types
 
-| Type | Description | Version Bump |
-|------|-------------|--------------|
-| `feat` | New feature | **Minor** (0.1.0 → 0.2.0) |
-| `fix` | Bug fix | **Patch** (0.1.0 → 0.1.1) |
-| `perf` | Performance improvement | **Patch** |
-| `refactor` | Code refactoring | ❌ No release |
-| `docs` | Documentation changes | ❌ No release |
-| `style` | Code style changes | ❌ No release |
-| `test` | Test changes | ❌ No release |
-| `chore` | Maintenance tasks | ❌ No release |
-| `BREAKING CHANGE` | Breaking changes | **Major** (0.1.0 → 1.0.0) |
+| Type              | Description             | Version Bump              |
+| ----------------- | ----------------------- | ------------------------- |
+| `feat`            | New feature             | **Minor** (0.1.0 → 0.2.0) |
+| `fix`             | Bug fix                 | **Patch** (0.1.0 → 0.1.1) |
+| `perf`            | Performance improvement | **Patch**                 |
+| `refactor`        | Code refactoring        | ❌ No release             |
+| `docs`            | Documentation changes   | ❌ No release             |
+| `style`           | Code style changes      | ❌ No release             |
+| `test`            | Test changes            | ❌ No release             |
+| `chore`           | Maintenance tasks       | ❌ No release             |
+| `BREAKING CHANGE` | Breaking changes        | **Major** (0.1.0 → 1.0.0) |
 
 ## Examples
 
@@ -68,4 +68,3 @@ git commit -m "feat!: redesign API"
 - **Write clear messages** - They become your changelog
 - **Use present tense** - "add feature" not "added feature"
 - **Be descriptive** - "fix clipboard crash" not "fix bug"
-

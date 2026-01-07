@@ -3,27 +3,32 @@
 ## What Was Set Up
 
 ✅ **GitHub Actions Workflow** (`.github/workflows/release.yml`)
-   - Automatically triggers on pushes to `main` or `master`
-   - Analyzes commits using semantic-release
-   - Creates releases and builds for Linux, Windows, and macOS
+
+- Automatically triggers on pushes to `main` or `master`
+- Analyzes commits using semantic-release
+- Creates releases and builds for Linux, Windows, and macOS
 
 ✅ **Semantic Release Configuration** (`.releaserc.json`)
-   - Configures automatic versioning based on commit messages
-   - Generates changelog automatically
-   - Updates version in `package.json`, `Cargo.toml`, and `tauri.conf.json`
+
+- Configures automatic versioning based on commit messages
+- Generates changelog automatically
+- Updates version in `package.json`, `Cargo.toml`, and `tauri.conf.json`
 
 ✅ **Version Sync Script** (`scripts/sync-version.js`)
-   - Keeps versions synchronized across all files
+
+- Keeps versions synchronized across all files
 
 ✅ **Documentation**
-   - `RELEASES.md` - Complete release workflow guide
-   - `.github/COMMIT_GUIDE.md` - Quick reference for commit messages
+
+- `RELEASES.md` - Complete release workflow guide
+- `.github/COMMIT_GUIDE.md` - Quick reference for commit messages
 
 ## What You Need to Do
 
 ### 1. Install Dependencies
 
 **For semantic-release (Node.js):**
+
 ```bash
 npm install
 ```
@@ -43,10 +48,12 @@ git push origin main
 ### 3. Verify GitHub Permissions
 
 The workflow uses `GITHUB_TOKEN` which is automatically provided by GitHub Actions. Make sure:
+
 - Your repository has Actions enabled
 - The default `GITHUB_TOKEN` has write permissions (usually automatic)
 
 To check/update permissions:
+
 1. Go to repository Settings → Actions → General
 2. Under "Workflow permissions", ensure "Read and write permissions" is selected
 3. Check "Allow GitHub Actions to create and approve pull requests" if needed
@@ -81,6 +88,7 @@ This will trigger the workflow and create a release if the commit warrants one.
 ### Commit Messages Matter
 
 Your commit messages determine releases:
+
 - `feat:` → Minor version bump (0.1.0 → 0.2.0)
 - `fix:` → Patch version bump (0.1.0 → 0.1.1)
 - `BREAKING CHANGE:` → Major version bump (0.1.0 → 1.0.0)
@@ -89,6 +97,7 @@ Your commit messages determine releases:
 ### First Release
 
 The first time you push, semantic-release will:
+
 - Start from version `0.1.0` (current version)
 - Only create a release if you have `feat:` or `fix:` commits
 - If you only have `chore:` commits (like setup), no release will be created
@@ -96,18 +105,21 @@ The first time you push, semantic-release will:
 ### Build Platforms
 
 The workflow builds for:
+
 - **Linux**: AppImage and DEB packages
 - **macOS**: DMG installer (if you need to remove this, delete the `build-macos` job)
 
 All artifacts are automatically attached to the GitHub release.
 
 **Note**: The workflow uses:
+
 - **Deno** for building (as configured in `tauri.conf.json` with `deno task build`)
 - **Node.js** for semantic-release (since it's a Node.js tool)
 
 ### Version Synchronization
 
 Versions are automatically kept in sync across:
+
 - `package.json`
 - `src-tauri/Cargo.toml`
 - `src-tauri/tauri.conf.json`
@@ -146,4 +158,3 @@ Versions are automatically kept in sync across:
 - [Semantic Versioning](https://semver.org/)
 - [Semantic Release Docs](https://semantic-release.gitbook.io/)
 - [Tauri Action](https://github.com/tauri-apps/tauri-action)
-

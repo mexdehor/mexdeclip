@@ -176,4 +176,3 @@ Starting version: `0.1.0` (initial development)
 - [Semantic Versioning](https://semver.org/)
 - [Semantic Release Documentation](https://semantic-release.gitbook.io/)
 - [Tauri Action Documentation](https://github.com/tauri-apps/tauri-action)
-
