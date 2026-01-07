@@ -18,11 +18,17 @@ export const ClipboardHeader = ({
 }: ClipboardHeaderProps) => {
   return (
     <header className="flex justify-between items-center p-4">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full">
+        {systemInfo.isWayland && (
+          <span className="text-xs text-neutral-500 ml-2">
+            Wayland {systemInfo.hasDataControl && "• Data Control ✓"}
+          </span>
+        )}
+
         <button
           onClick={onToggleMonitoring}
           title={isMonitoring ? "Monitoring active" : "Monitoring paused"}
-          className="cursor-pointer"
+          className="cursor-pointer ml-auto"
         >
           {isMonitoring ? (
             <CirclePlay className="size-5 text-neutral-600" />
@@ -39,12 +45,6 @@ export const ClipboardHeader = ({
           >
             <Trash2 className="size-5 text-neutral-600" />
           </button>
-        )}
-
-        {systemInfo.isWayland && (
-          <span className="text-xs text-neutral-500 ml-2">
-            Wayland {systemInfo.hasDataControl && "• Data Control ✓"}
-          </span>
         )}
       </div>
     </header>
