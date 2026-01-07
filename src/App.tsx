@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./App.css";
 import {
   CirclePause,
@@ -28,9 +29,12 @@ function App() {
   const [, setCurrentClipboard] = useState<string>("");
   const [isMonitoring, setIsMonitoring] = useState<boolean>(true);
   const [error, setError] = useState<ClipboardError | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<number>(750);
+  const [hasWindowFocus, setHasWindowFocus] = useState<boolean>(false);
+  const [isWayland, setIsWayland] = useState<boolean>(false);
+  const [hasDataControl, setHasDataControl] = useState<boolean>(false);
   const previousClipboardRef = useRef<string>("");
-  const consecutiveErrorsRef = useRef<number>(0);
+  const pollingIntervalRef = useRef<number | null>(null);
+  const isReadingRef = useRef<boolean>(false);
 
   const logError = useCallback((context: string, error: unknown) => {
     const timestamp = new Date().toISOString();
@@ -42,26 +46,12 @@ function App() {
   const readClipboard = useCallback(async () => {
     try {
       const text = await invoke<string>("read_clipboard");
-      // Reset error count on successful read
-      consecutiveErrorsRef.current = 0;
-      // Reset polling interval to normal if it was increased due to errors
-      if (pollingInterval > 750) {
-        setPollingInterval(750);
-      }
       return text || "";
     } catch (error) {
       const errorMessage = logError("Failed to read clipboard", error);
-      consecutiveErrorsRef.current += 1;
 
-      // Increase polling interval exponentially on consecutive errors (max 5 seconds)
-      const newInterval = Math.min(
-        750 * Math.pow(2, consecutiveErrorsRef.current - 1),
-        5000
-      );
-      setPollingInterval(newInterval);
-
-      // Show error to user if it's a significant error
-      if (consecutiveErrorsRef.current >= 2) {
+      // Only show error for persistent failures
+      if (!errorMessage.includes("No selection")) {
         setError({
           id: Date.now().toString(),
           message: `Clipboard read failed: ${errorMessage}`,
@@ -71,7 +61,7 @@ function App() {
       }
       return "";
     }
-  }, [logError, pollingInterval]);
+  }, [logError]);
 
   const writeClipboard = useCallback(
     async (text: string) => {
@@ -131,19 +121,19 @@ function App() {
 
       try {
         await writeClipboard(text);
-        // Small delay to ensure clipboard is set
-        await new Promise((resolve) => setTimeout(resolve, 100));
         // Update ref to prevent re-detection
         previousClipboardRef.current = text;
         setCurrentClipboard(text);
       } finally {
-        // Restore monitoring state
-        if (wasMonitoring) {
-          setIsMonitoring(true);
-        }
+        // Restore monitoring state after a delay
+        setTimeout(() => {
+          if (wasMonitoring) {
+            setIsMonitoring(true);
+          }
+        }, 200);
       }
 
-      // Optionally hide window after copying
+      // Hide window after copying
       await invoke("hide_window");
     },
     [writeClipboard, isMonitoring]
@@ -159,12 +149,11 @@ function App() {
 
   const handleRetryClipboard = useCallback(async () => {
     try {
-      // Reinitialize clipboard on backend
       await invoke("reinitialize_clipboard");
       setError(null);
-      consecutiveErrorsRef.current = 0;
-      setPollingInterval(750);
-      // Try reading immediately after reinitialization
+
+      // Try reading after reinitialization
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const text = await readClipboard();
       if (text) {
         previousClipboardRef.current = text;
@@ -174,7 +163,7 @@ function App() {
       const errorMessage = logError("Failed to reinitialize clipboard", error);
       setError({
         id: Date.now().toString(),
-        message: `Failed to reinitialize clipboard: ${errorMessage}`,
+        message: `Failed to reinitialize: ${errorMessage}`,
         timestamp: new Date(),
         retryable: true,
       });
@@ -185,28 +174,123 @@ function App() {
     setError(null);
   }, []);
 
-  // Monitor clipboard changes
-  useEffect(() => {
-    if (!isMonitoring) return;
+  // Read clipboard on focus (crucial for Wayland)
+  const readClipboardOnFocus = useCallback(async () => {
+    if (isReadingRef.current || !isMonitoring) return;
 
-    const interval = setInterval(async () => {
-      const text = await readClipboard();
-      if (text && text !== previousClipboardRef.current) {
-        previousClipboardRef.current = text;
-        setCurrentClipboard(text);
-        addToHistory(text);
-        // Clear error on successful read
-        if (error) {
-          setError(null);
+    isReadingRef.current = true;
+    try {
+      // Multiple attempts with delays (Wayland may need time to grant access)
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
         }
-      } else if (text) {
-        // Update current clipboard even if it's the same (for UI consistency)
-        setCurrentClipboard(text);
-      }
-    }, pollingInterval); // Use dynamic polling interval
 
-    return () => clearInterval(interval);
-  }, [isMonitoring, readClipboard, addToHistory, pollingInterval, error]);
+        const text = await readClipboard();
+
+        if (text) {
+          setCurrentClipboard(text);
+          if (text !== previousClipboardRef.current) {
+            previousClipboardRef.current = text;
+            addToHistory(text);
+          }
+          // Successfully read, stop retrying
+          break;
+        }
+      }
+    } finally {
+      isReadingRef.current = false;
+    }
+  }, [isMonitoring, readClipboard, addToHistory]);
+
+  // Detect Wayland session and data control capability
+  useEffect(() => {
+    Promise.all([
+      invoke<boolean>("is_wayland_session"),
+      invoke<boolean>("has_data_control_enabled"),
+    ])
+      .then(([wayland, dataControl]) => {
+        setIsWayland(wayland);
+        setHasDataControl(dataControl);
+
+        if (wayland && dataControl) {
+          console.log(
+            "Running on Wayland with data-control enabled - background clipboard access available"
+          );
+        } else if (wayland) {
+          console.log(
+            "Running on Wayland without data-control - clipboard access requires window focus"
+          );
+        }
+      })
+      .catch(() => {
+        setIsWayland(false);
+        setHasDataControl(false);
+      });
+  }, []);
+
+  // On Wayland: Only read clipboard when focused (unless data-control is enabled)
+  // On X11: Poll regularly
+  useEffect(() => {
+    if (!isMonitoring) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // On Wayland without data-control, only poll when window is focused
+    // With data-control enabled, we can poll even when unfocused
+    if (isWayland && !hasDataControl && !hasWindowFocus) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Poll clipboard
+    // - X11: always
+    // - Wayland with data-control: always
+    // - Wayland without data-control: only when focused
+    const interval = setInterval(
+      async () => {
+        if (isReadingRef.current) return;
+
+        isReadingRef.current = true;
+        try {
+          const text = await readClipboard();
+
+          if (text && text !== previousClipboardRef.current) {
+            previousClipboardRef.current = text;
+            setCurrentClipboard(text);
+            addToHistory(text);
+            setError(null);
+          } else if (text) {
+            setCurrentClipboard(text);
+          }
+        } finally {
+          isReadingRef.current = false;
+        }
+      },
+      isWayland ? 500 : 750
+    ); // Faster polling on Wayland for responsiveness
+
+    pollingIntervalRef.current = interval;
+
+    return () => {
+      clearInterval(interval);
+      pollingIntervalRef.current = null;
+    };
+  }, [
+    isMonitoring,
+    isWayland,
+    hasDataControl,
+    hasWindowFocus,
+    readClipboard,
+    addToHistory,
+  ]);
 
   // Read initial clipboard
   useEffect(() => {
@@ -219,6 +303,78 @@ function App() {
     };
     initClipboard();
   }, [readClipboard]);
+
+  // Window focus events - critical for Wayland
+  useEffect(() => {
+    const appWindow = getCurrentWindow();
+
+    const handleFocus = async () => {
+      setHasWindowFocus(true);
+      // On Wayland without data-control, immediately read clipboard when gaining focus
+      if (isWayland && !hasDataControl) {
+        await readClipboardOnFocus();
+      }
+    };
+
+    const handleBlur = () => {
+      setHasWindowFocus(false);
+    };
+
+    // Listen to Tauri window focus events
+    let unlistenFocus: (() => void) | null = null;
+
+    const setupFocusListener = async () => {
+      try {
+        unlistenFocus = await appWindow.onFocusChanged((event) => {
+          if (event.payload) {
+            handleFocus();
+          } else {
+            handleBlur();
+          }
+        });
+      } catch (error) {
+        console.error("Failed to setup focus listener:", error);
+      }
+    };
+
+    setupFocusListener();
+
+    // Initialize focus state
+    appWindow
+      .isFocused()
+      .then((focused) => {
+        setHasWindowFocus(focused);
+        if (focused && isWayland && !hasDataControl && isMonitoring) {
+          readClipboardOnFocus();
+        }
+      })
+      .catch(console.error);
+
+    // Also listen to browser focus events as fallback
+    const handleWindowFocus = () => handleFocus();
+    const handleWindowBlur = () => handleBlur();
+
+    window.addEventListener("focus", handleWindowFocus);
+    window.addEventListener("blur", handleWindowBlur);
+
+    // Listen to visibility changes (workspace switches)
+    const handleVisibilityChange = async () => {
+      if (!document.hidden && isMonitoring && isWayland && !hasDataControl) {
+        await readClipboardOnFocus();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (unlistenFocus) {
+        unlistenFocus();
+      }
+      window.removeEventListener("focus", handleWindowFocus);
+      window.removeEventListener("blur", handleWindowBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isWayland, hasDataControl, isMonitoring, readClipboardOnFocus]);
 
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -258,9 +414,16 @@ function App() {
             <button
               onClick={handleClearAll}
               className="flex items-center gap-2 cursor-pointer"
+              title="Clear all history"
             >
               <Trash2 className="size-5 text-neutral-600" />
             </button>
+          )}
+
+          {isWayland && (
+            <span className="text-xs text-neutral-500 ml-2">
+              Wayland {hasDataControl && "• Data Control ✓"}
+            </span>
           )}
         </div>
       </header>

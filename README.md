@@ -16,6 +16,7 @@ A clipboard manager built with Tauri, React, and TypeScript. Tracks your clipboa
 This application is designed to work on Wayland environments (e.g., Pop OS 24.04). For proper clipboard functionality on Wayland, ensure:
 
 1. **Environment Variables**: The following environment variables should be set:
+
    - `WAYLAND_DISPLAY`: Usually set automatically by your Wayland compositor
    - `XDG_RUNTIME_DIR`: Required for Wayland socket access (typically `/run/user/<uid>`)
 
@@ -34,21 +35,25 @@ This application is designed to work on Wayland environments (e.g., Pop OS 24.04
 If clipboard reading fails intermittently, especially in production builds:
 
 1. **Check Environment Variables**: Verify that `WAYLAND_DISPLAY` and `XDG_RUNTIME_DIR` are set:
+
    ```bash
    echo $WAYLAND_DISPLAY
    echo $XDG_RUNTIME_DIR
    ```
 
 2. **Restart the Application**: The application includes automatic retry logic and clipboard reinitialization. If errors persist:
+
    - Click the "Retry" button in the error notification
    - Or restart the application
 
 3. **Check Wayland Socket Permissions**: Ensure your user has access to the Wayland socket:
+
    ```bash
    ls -la $XDG_RUNTIME_DIR/wayland-*
    ```
 
 4. **Production Build Issues**: If clipboard works in development but not in production:
+
    - Ensure the production build has access to Wayland environment variables
    - Check that the application is not being sandboxed in a way that blocks clipboard access
    - Verify that `wl-clipboard` or Wayland clipboard protocols are available
@@ -77,6 +82,7 @@ If clipboard operations continue to fail:
 ### Clipboard Management
 
 The application uses a reusable clipboard instance with:
+
 - Automatic retry logic (3 attempts with exponential backoff)
 - Clipboard instance reuse to reduce overhead
 - Automatic reinitialization on failure
