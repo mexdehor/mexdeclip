@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/mexdehor/mexdeclip/compare/v1.0.0...v1.1.0) (2026-01-10)
+
+
+### Features
+
+* receive system shortcut to toggle window ([f9b889d](https://github.com/mexdehor/mexdeclip/commit/f9b889de3a8f716bed4122bdab1bd5b2c9e94c83))
+
 # 1.0.0 (2026-01-07)
 
 
