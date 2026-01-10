@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { ClipboardItem } from "../types/clipboard";
+import { ClipboardItem } from "@/types/clipboard";
 
 const MAX_HISTORY_ITEMS = 50;
 
@@ -11,16 +11,13 @@ export const useClipboardHistory = () => {
     if (!text.trim()) return;
 
     setHistory((prev) => {
-      // Remove duplicates
-      const filtered = prev.filter((item) => item.text !== text);
-      // Add new item at the beginning
       const newItem: ClipboardItem = {
         id: Date.now().toString(),
         text,
         timestamp: new Date(),
       };
-      // Keep only last N items
-      return [newItem, ...filtered].slice(0, MAX_HISTORY_ITEMS);
+
+      return [newItem, ...prev].slice(0, MAX_HISTORY_ITEMS);
     });
   }, []);
 

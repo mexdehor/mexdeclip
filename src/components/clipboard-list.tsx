@@ -1,6 +1,6 @@
-import { ClipboardItem as ClipboardItemType } from "../types/clipboard";
-import { ClipboardItem } from "./clipboard-item";
-import { EmptyState } from "./clipboard-empty-state";
+import { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
+import { ClipboardItem } from "@/components/clipboard-item";
+import { EmptyState } from "@/components/clipboard-empty-state";
 
 type ClipboardListProps = {
   items: ClipboardItemType[];

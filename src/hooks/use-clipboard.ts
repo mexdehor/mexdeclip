@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ClipboardError } from "../types/clipboard";
+import { ClipboardError } from "@/types/clipboard";
 
 export const useClipboard = () => {
   const [error, setError] = useState<ClipboardError | null>(null);
@@ -35,7 +35,6 @@ export const useClipboard = () => {
   const write = useCallback(
     async (text: string): Promise<void> => {
       try {
-        // Try browser Clipboard API first (more reliable)
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(text);
           setError(null);
@@ -45,7 +44,6 @@ export const useClipboard = () => {
         logError("Browser clipboard API failed", error);
       }
 
-      // Fallback to Rust command
       try {
         await invoke("write_clipboard", { text });
         setError(null);

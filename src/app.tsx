@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import "@/main.css";
 
-import { ClipboardHeader } from "./components/clipboard-window-header";
-import { ClipboardList } from "./components/clipboard-list";
-import { ErrorBanner } from "./components/clipboard-error-banner";
+import { ClipboardHeader } from "@/components/clipboard-window-header";
+import { ClipboardList } from "@/components/clipboard-list";
+import { ErrorBanner } from "@/components/clipboard-error-banner";
 
-import { useClipboard } from "./hooks/useClipboard";
-import { useClipboardHistory } from "./hooks/useClipboardHistory";
-import { useClipboardMonitor } from "./hooks/useClipboardMonitor";
+import { useClipboard } from "@/hooks/use-clipboard";
+import { useClipboardHistory } from "@/hooks/use-clipboard-history";
+import { useClipboardMonitor } from "@/hooks/use-clipboard-monitor";
 
 function App() {
   const [isMonitoring, setIsMonitoring] = useState(true);

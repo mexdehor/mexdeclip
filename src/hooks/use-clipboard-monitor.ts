@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { SystemInfo } from "../types/clipboard";
+import { SystemInfo } from "@/types/clipboard";
 
 type MonitorOptions = {
   onClipboardChange: (text: string) => void;
@@ -147,7 +147,6 @@ export const useClipboardMonitor = ({
 
     const handleFocus = async () => {
       setHasWindowFocus(true);
-      // On Wayland without data-control, read on focus
       if (isWayland && !hasDataControl) {
         await readClipboardOnFocus();
       }
