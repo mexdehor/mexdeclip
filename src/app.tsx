@@ -44,7 +44,7 @@ function App() {
 
       await invoke("hide_window");
     },
-    [write, isMonitoring, previousClipboardRef, setCurrentClipboard]
+    [write, isMonitoring, previousClipboardRef, setCurrentClipboard],
   );
 
   const handleRetry = useCallback(async () => {

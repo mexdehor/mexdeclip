@@ -3,59 +3,36 @@
 
 mod clipboard;
 mod commands;
+mod tray;
+mod window_state;
 
 use clipboard::ClipboardManager;
-use commands::*;
-use tauri::menu::{Menu, MenuItem};
-use tauri::tray::TrayIconBuilder;
+use commands::{
+    handle_command, hide_window, is_cosmic_data_control_enabled, is_wayland_session,
+    parse_command_from_args, read_clipboard, reinitialize_clipboard, show_window,
+    show_window_at_cursor, toggle_window, write_clipboard,
+};
 use tauri::Manager;
+use window_state::set_visible as window_set_visible;
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let initial_command = parse_command_from_args(&args).to_string();
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let command = parse_command_from_args(&args);
+            handle_command(app, command);
+        }))
         .manage(ClipboardManager::new())
-        .setup(|app| {
-            let show_item = MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
-            let hide_item = MenuItem::with_id(app, "hide", "Hide Window", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-
-            let menu = Menu::with_items(app, &[&show_item, &hide_item, &quit_item])?;
-
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
-                .menu(&menu)
-                .on_menu_event(move |app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                    "hide" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.hide();
-                        }
-                    }
-                    "quit" => {
-                        app.exit(0);
-                    }
-                    _ => {}
-                })
-                .build(app)?;
-
-            if let Some(window) = app.get_webview_window("main") {
-                let window_clone = window.clone();
-                window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                        api.prevent_close();
-                        let _ = window_clone.hide();
-                    }
-                });
-            }
-
+        .setup(move |app| {
+            tray::setup(app)?;
+            setup_main_window(app, &initial_command);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             show_window,
+            show_window_at_cursor,
             hide_window,
             toggle_window,
             read_clipboard,
@@ -66,4 +43,25 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn setup_main_window(app: &tauri::App, initial_command: &str) {
+    if let Some(window) = app.get_webview_window("main") {
+        handle_command(app.handle(), initial_command);
+
+        let window_clone = window.clone();
+        window.on_window_event(move |event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                api.prevent_close();
+                let _ = window_clone.hide();
+                window_set_visible(false);
+            }
+            tauri::WindowEvent::Focused(focused) => {
+                if *focused {
+                    window_set_visible(true);
+                }
+            }
+            _ => {}
+        });
+    }
 }
