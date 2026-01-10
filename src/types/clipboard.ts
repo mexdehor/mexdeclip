@@ -13,5 +13,5 @@ export type ClipboardError = {
 
 export type SystemInfo = {
   isWayland: boolean;
-  hasDataControl: boolean;
+  isCosmicDataControlEnabled: boolean;
 };

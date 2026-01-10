@@ -1,45 +1,21 @@
 use super::wayland;
 use super::x11::X11Clipboard;
+use crate::commands::is_cosmic_data_control_enabled;
 
-/// Check if running on Wayland
 fn is_wayland() -> bool {
     std::env::var("WAYLAND_DISPLAY").is_ok()
 }
 
-/// Check if COSMIC data control is enabled
-pub fn has_data_control() -> bool {
-    std::env::var("COSMIC_DATA_CONTROL_ENABLED")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-}
-
-/// Unified clipboard manager that handles both X11 and Wayland
 pub struct ClipboardManager {
     x11_clipboard: Option<X11Clipboard>,
     is_wayland: bool,
-    has_data_control: bool,
+    _is_cosmic_data_control_enabled: bool,
 }
 
 impl ClipboardManager {
     pub fn new() -> Self {
         let is_wayland = is_wayland();
-        let has_data_control = has_data_control();
-
-        if is_wayland {
-            eprintln!("Wayland detected - will use wl-clipboard commands");
-            if has_data_control {
-                eprintln!(
-                    "COSMIC_DATA_CONTROL_ENABLED detected - background clipboard access available!"
-                );
-            } else {
-                eprintln!(
-                    "COSMIC_DATA_CONTROL_ENABLED not set - clipboard access requires window focus"
-                );
-                eprintln!("To enable background access, set COSMIC_DATA_CONTROL_ENABLED=1 in /etc/environment.d/clipboard.conf");
-            }
-        } else {
-            eprintln!("X11 detected - will use arboard");
-        }
+        let is_cosmic_data_control_enabled = is_cosmic_data_control_enabled();
 
         Self {
             x11_clipboard: if is_wayland {
@@ -48,7 +24,7 @@ impl ClipboardManager {
                 Some(X11Clipboard::new())
             },
             is_wayland,
-            has_data_control,
+            _is_cosmic_data_control_enabled: is_cosmic_data_control_enabled,
         }
     }
 
@@ -56,8 +32,8 @@ impl ClipboardManager {
         self.is_wayland
     }
 
-    pub fn has_data_control(&self) -> bool {
-        self.has_data_control
+    pub fn _is_cosmic_data_control_enabled(&self) -> bool {
+        self._is_cosmic_data_control_enabled
     }
 
     pub async fn read(&self) -> Result<String, String> {
@@ -84,7 +60,6 @@ impl ClipboardManager {
 
     pub fn reinitialize(&self) -> Result<(), String> {
         if self.is_wayland {
-            // Nothing to reinitialize for Wayland
             Ok(())
         } else {
             match &self.x11_clipboard {

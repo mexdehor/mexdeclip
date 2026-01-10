@@ -18,7 +18,7 @@ export const useClipboardMonitor = ({
 }: MonitorOptions) => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>({
     isWayland: false,
-    hasDataControl: false,
+    isCosmicDataControlEnabled: false,
   });
   const [hasWindowFocus, setHasWindowFocus] = useState(false);
   const previousClipboardRef = useRef<string>("");
@@ -29,19 +29,19 @@ export const useClipboardMonitor = ({
   useEffect(() => {
     Promise.all([
       invoke<boolean>("is_wayland_session"),
-      invoke<boolean>("has_data_control_enabled"),
+      invoke<boolean>("is_cosmic_data_control_enabled"),
     ])
-      .then(([isWayland, hasDataControl]) => {
-        setSystemInfo({ isWayland, hasDataControl });
+      .then(([isWayland, isCosmicDataControlEnabled]) => {
+        setSystemInfo({ isWayland, isCosmicDataControlEnabled });
 
-        if (isWayland && hasDataControl) {
+        if (isWayland && isCosmicDataControlEnabled) {
           console.log("Wayland with data-control - background clipboard access available");
         } else if (isWayland) {
           console.log("Wayland without data-control - requires window focus");
         }
       })
       .catch(() => {
-        setSystemInfo({ isWayland: false, hasDataControl: false });
+        setSystemInfo({ isWayland: false, isCosmicDataControlEnabled: false });
       });
   }, []);
 
@@ -84,7 +84,7 @@ export const useClipboardMonitor = ({
     }
 
     // On Wayland without data-control, only poll when focused
-    const { isWayland, hasDataControl } = systemInfo;
+    const { isWayland, isCosmicDataControlEnabled: hasDataControl } = systemInfo;
     if (isWayland && !hasDataControl && !hasWindowFocus) {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -143,7 +143,7 @@ export const useClipboardMonitor = ({
   // Window focus handling
   useEffect(() => {
     const appWindow = getCurrentWindow();
-    const { isWayland, hasDataControl } = systemInfo;
+    const { isWayland, isCosmicDataControlEnabled: hasDataControl } = systemInfo;
 
     const handleFocus = async () => {
       setHasWindowFocus(true);

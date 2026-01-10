@@ -21,7 +21,8 @@ export const ClipboardHeader = ({
       <div className="flex items-center gap-2 w-full">
         {systemInfo.isWayland && (
           <span className="text-xs text-neutral-500 ml-2">
-            Wayland {systemInfo.hasDataControl && "• Data Control ✓"}
+            Wayland{" "}
+            {systemInfo.isCosmicDataControlEnabled && "• Data Control ✓"}
           </span>
         )}
 

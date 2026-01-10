@@ -1,10 +1,5 @@
-use crate::clipboard::{has_data_control, ClipboardManager};
+use crate::clipboard::ClipboardManager;
 use tauri::{AppHandle, Manager, State};
-
-#[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 #[tauri::command]
 pub async fn read_clipboard(manager: State<'_, ClipboardManager>) -> Result<String, String> {
@@ -59,6 +54,8 @@ pub fn is_wayland_session(manager: State<'_, ClipboardManager>) -> bool {
 }
 
 #[tauri::command]
-pub fn has_data_control_enabled() -> bool {
-    has_data_control()
+pub fn is_cosmic_data_control_enabled() -> bool {
+    std::env::var("COSMIC_DATA_CONTROL_ENABLED")
+        .map(|v| v == "1")
+        .unwrap_or(false)
 }

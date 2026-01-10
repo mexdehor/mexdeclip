@@ -13,7 +13,7 @@ impl X11Clipboard {
         }
     }
 
-    fn ensure_clipboard(&self) -> Result<(), String> {
+    fn ensure_clipboard_instance_exists(&self) -> Result<(), String> {
         let mut clipboard_guard = self
             .clipboard
             .lock()
@@ -39,8 +39,7 @@ impl X11Clipboard {
                 tokio::time::sleep(Duration::from_millis(delay_ms)).await;
             }
 
-            // Ensure clipboard instance exists
-            if let Err(e) = self.ensure_clipboard() {
+            if let Err(e) = self.ensure_clipboard_instance_exists() {
                 if attempt < MAX_RETRIES - 1 {
                     continue;
                 } else {
@@ -48,7 +47,6 @@ impl X11Clipboard {
                 }
             }
 
-            // Try to read from clipboard
             let result = {
                 let mut clipboard_guard = self
                     .clipboard
@@ -68,7 +66,6 @@ impl X11Clipboard {
                 Err(e) => {
                     let error_str = e.to_string();
 
-                    // Empty clipboard is not an error
                     if error_str.contains("empty") || error_str.contains("not available") {
                         return Ok(String::new());
                     }
@@ -94,8 +91,7 @@ impl X11Clipboard {
         const INITIAL_DELAY_MS: u64 = 50;
 
         for attempt in 0..MAX_RETRIES {
-            // Ensure clipboard instance exists
-            if let Err(e) = self.ensure_clipboard() {
+            if let Err(e) = self.ensure_clipboard_instance_exists() {
                 if attempt < MAX_RETRIES - 1 {
                     let delay_ms = INITIAL_DELAY_MS * (1 << attempt);
                     tokio::time::sleep(Duration::from_millis(delay_ms)).await;
@@ -105,7 +101,6 @@ impl X11Clipboard {
                 }
             }
 
-            // Try to write to clipboard
             let result = {
                 let mut clipboard_guard = self
                     .clipboard
@@ -145,6 +140,6 @@ impl X11Clipboard {
         if let Ok(mut guard) = self.clipboard.lock() {
             *guard = None;
         }
-        self.ensure_clipboard()
+        self.ensure_clipboard_instance_exists()
     }
 }
