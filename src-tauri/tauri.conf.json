@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mexdeclip",
+  "productName": "Mexdeclip",
   "version": "1.0.0",
   "identifier": "com.mexdehor.clip",
   "build": {
