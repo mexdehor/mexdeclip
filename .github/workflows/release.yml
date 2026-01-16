@@ -35,6 +35,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Get tags before semantic-release
+        id: tags-before
+        run: |
+          git fetch --tags || true
+          TAGS_BEFORE=$(git tag --list | sort -V | tail -1 || echo "")
+          echo "tags_before=$TAGS_BEFORE" >> $GITHUB_OUTPUT
+
       - name: Run semantic-release
         id: semantic
         env:
@@ -46,16 +53,19 @@ jobs:
         id: check-release
         run: |
           git fetch --tags || true
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          TAGS_AFTER=$(git tag --list | sort -V | tail -1 || echo "")
+          TAGS_BEFORE="${{ steps.tags-before.outputs.tags_before }}"
 
-          if [ -n "$LATEST_TAG" ]; then
-            VERSION=${LATEST_TAG#v}
+          # Check if a new tag was created
+          if [ -n "$TAGS_AFTER" ] && [ "$TAGS_AFTER" != "$TAGS_BEFORE" ]; then
+            VERSION=${TAGS_AFTER#v}
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "released=true" >> $GITHUB_OUTPUT
-            echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "tag=$TAGS_AFTER" >> $GITHUB_OUTPUT
           else
             echo "released=false" >> $GITHUB_OUTPUT
             echo "version=" >> $GITHUB_OUTPUT
+            echo "tag=" >> $GITHUB_OUTPUT
           fi
 
       - name: Output release status
