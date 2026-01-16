@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/mexdehor/mexdeclip/compare/v1.1.0...v1.2.0) (2026-01-16)
+
+
+### Features
+
+* can read image ([c751c30](https://github.com/mexdehor/mexdeclip/commit/c751c30990dc4d972bfd982dae599d0866792248))
+
 # [1.1.0](https://github.com/mexdehor/mexdeclip/compare/v1.0.0...v1.1.0) (2026-01-10)
 
 
