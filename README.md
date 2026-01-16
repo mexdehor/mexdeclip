@@ -1,16 +1,18 @@
-# Mexdehor Clipboard Manager
+# Mexdeclip
 
-A clipboard manager built with Tauri, React, and TypeScript. Tracks your clipboard history and provides quick access to previously copied items.
+A clipboard manager built with Tauri, React, and TypeScript.
 
 ## Features
 
-- **Clipboard history tracking** - Automatically tracks all copied text items
+- **Clipboard history tracking** - Automatically tracks all copied text and image items
+- **Image clipboard support** - Full support for copying and pasting images from clipboard history
 - **Quick copy from history** - Click any item to copy it back to clipboard
 - **Monitoring toggle** - Pause/resume clipboard monitoring as needed
 - **Clear history** - Delete individual items or clear all history at once
 - **Automatic environment detection** - Automatically detects and adapts to Wayland or X11
+- **System tray integration** - Access the application from system tray with show/hide/quit options
+- **Single instance** - Only one instance runs at a time, preventing conflicts
 - **Error handling** - Built-in retry logic and error recovery
-- **System tray integration** - _Planned feature (not yet implemented)_
 
 ## Requirements
 
@@ -45,7 +47,7 @@ For proper clipboard functionality on Wayland (e.g., Pop OS 24.04, GNOME Wayland
    sudo pacman -S wl-clipboard
    ```
 
-4. **COSMIC Data Control** (Optional): For background clipboard access on COSMIC desktop without window focus:
+4. **COSMIC Data Control**: For background clipboard access on COSMIC desktop without window focus:
    - Set `COSMIC_DATA_CONTROL_ENABLED=1` in `/etc/environment.d/clipboard.conf`
    - Without this, clipboard access requires the application window to be focused
 
@@ -55,7 +57,24 @@ For X11 environments, the application uses the `arboard` crate which works out o
 
 ### Development Setup
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+**Prerequisites:**
+
+- [Deno](https://deno.com/) (for npm)
+- [Tauri](https://tauri.app/) toolchain
+- System dependencies for Tauri (see [Tauri documentation](https://tauri.app/v1/guides/getting-started/prerequisites))
+
+**Development Commands:**
+
+```bash
+# Install dependencies
+deno install
+
+# Run in development mode
+deno task tauri dev
+
+# Build for production
+deno task tauri build
+```
 
 ## Troubleshooting
 
@@ -102,7 +121,9 @@ The application displays error messages when clipboard operations fail. Common e
 - **"Failed to create clipboard instance"** (X11): X11 clipboard may be locked or unavailable
 - **"Failed to execute wl-paste"** (Wayland): `wl-clipboard` may not be installed or Wayland socket access denied
 - **"Failed to read clipboard"**: Clipboard may be locked by another application or environment not properly configured
+- **"Failed to read clipboard image"**: Image clipboard may be empty or unavailable
 - **"Failed to write clipboard"**: Similar to read errors, check environment configuration
+- **"Failed to write image to clipboard"**: Image clipboard write failed, check environment configuration
 
 ### Manual Recovery
 
@@ -133,6 +154,7 @@ The application uses different clipboard backends based on the detected environm
 - Uses `wl-clipboard` commands (`wl-paste`, `wl-copy`)
 - No persistent clipboard instance needed
 - Supports COSMIC Data Control for background access
+- Image support via `wl-paste` with type detection
 
 **X11 Backend:**
 
@@ -140,6 +162,15 @@ The application uses different clipboard backends based on the detected environm
 - Reusable clipboard instance with automatic retry logic (3 attempts with exponential backoff)
 - Automatic reinitialization on failure
 - Clipboard instance reuse to reduce overhead
+- Full image clipboard support via `arboard` image APIs
+
+**Image Clipboard:**
+
+- Supports reading and writing PNG images from/to clipboard
+- Images are stored as base64-encoded PNG data in history
+- Image dimensions are tracked and displayed in the UI
+- Images are displayed as thumbnails in the clipboard history list
+- Priority: When both text and image are available, image takes precedence
 
 ### Polling Strategy
 
@@ -154,3 +185,9 @@ The application uses different clipboard backends based on the detected environm
 - Clipboard reinitialization on failure
 - User-friendly error messages with retry button
 - Detailed error logging for debugging
+
+### Single Instance Management
+
+- Uses `tauri-plugin-single-instance` to ensure only one instance runs at a time
+- Additional instances send commands to the existing instance instead of launching
+- Supports command-line arguments: `show`, `hide`, `toggle` (defaults to `show`)
