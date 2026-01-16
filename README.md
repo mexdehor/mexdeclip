@@ -2,6 +2,11 @@
 
 A clipboard manager built with Tauri, React, and TypeScript.
 
+For Pop!_OS on COSMIC, please make sure you set `COSMIC_DATA_CONTROL_ENABLED` to `1`.
+
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/3876fa7a-6eed-4d40-84d2-cb6dbe7b6f3d" />
+
+
 ## Features
 
 - **Clipboard history tracking** - Automatically tracks all copied text and image items
