@@ -1,19 +1,47 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { SystemInfo } from "@/types/clipboard";
+import { SystemInfo, ClipboardContent } from "@/types/clipboard";
 
 type MonitorOptions = {
-  onClipboardChange: (text: string) => void;
-  onCurrentClipboardUpdate: (text: string) => void;
-  readClipboard: () => Promise<string>;
+  onClipboardChange: (content: ClipboardContent) => void;
+  onCurrentContentUpdate: (content: ClipboardContent) => void;
+  readContent: () => Promise<ClipboardContent>;
   isMonitoring: boolean;
+};
+
+// Helper to compare clipboard content for equality
+const isContentEqual = (
+  a: ClipboardContent | null,
+  b: ClipboardContent | null,
+): boolean => {
+  if (a === null || b === null) return a === b;
+  if (a.type !== b.type) return false;
+
+  switch (a.type) {
+    case "text":
+      return b.type === "text" && a.text === b.text;
+    case "image":
+      return b.type === "image" && a.base64Data === b.base64Data;
+    case "empty":
+      return b.type === "empty";
+    default:
+      return false;
+  }
+};
+
+// Helper to check if content is empty
+const isContentEmpty = (content: ClipboardContent): boolean => {
+  if (content.type === "empty") return true;
+  if (content.type === "text" && !content.text.trim()) return true;
+  if (content.type === "image" && !content.base64Data) return true;
+  return false;
 };
 
 export const useClipboardMonitor = ({
   onClipboardChange,
-  onCurrentClipboardUpdate,
-  readClipboard,
+  onCurrentContentUpdate,
+  readContent,
   isMonitoring,
 }: MonitorOptions) => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>({
@@ -21,7 +49,7 @@ export const useClipboardMonitor = ({
     isCosmicDataControlEnabled: false,
   });
   const [hasWindowFocus, setHasWindowFocus] = useState(false);
-  const previousClipboardRef = useRef<string>("");
+  const previousContentRef = useRef<ClipboardContent | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
   const isReadingRef = useRef<boolean>(false);
 
@@ -35,7 +63,9 @@ export const useClipboardMonitor = ({
         setSystemInfo({ isWayland, isCosmicDataControlEnabled });
 
         if (isWayland && isCosmicDataControlEnabled) {
-          console.log("Wayland with data-control - background clipboard access available");
+          console.log(
+            "Wayland with data-control - background clipboard access available",
+          );
         } else if (isWayland) {
           console.log("Wayland without data-control - requires window focus");
         }
@@ -57,13 +87,13 @@ export const useClipboardMonitor = ({
           await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
         }
 
-        const text = await readClipboard();
+        const content = await readContent();
 
-        if (text) {
-          onCurrentClipboardUpdate(text);
-          if (text !== previousClipboardRef.current) {
-            previousClipboardRef.current = text;
-            onClipboardChange(text);
+        if (!isContentEmpty(content)) {
+          onCurrentContentUpdate(content);
+          if (!isContentEqual(content, previousContentRef.current)) {
+            previousContentRef.current = content;
+            onClipboardChange(content);
           }
           break;
         }
@@ -71,7 +101,7 @@ export const useClipboardMonitor = ({
     } finally {
       isReadingRef.current = false;
     }
-  }, [isMonitoring, readClipboard, onClipboardChange, onCurrentClipboardUpdate]);
+  }, [isMonitoring, readContent, onClipboardChange, onCurrentContentUpdate]);
 
   // Polling effect
   useEffect(() => {
@@ -84,7 +114,8 @@ export const useClipboardMonitor = ({
     }
 
     // On Wayland without data-control, only poll when focused
-    const { isWayland, isCosmicDataControlEnabled: hasDataControl } = systemInfo;
+    const { isWayland, isCosmicDataControlEnabled: hasDataControl } =
+      systemInfo;
     if (isWayland && !hasDataControl && !hasWindowFocus) {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -94,24 +125,29 @@ export const useClipboardMonitor = ({
     }
 
     // Poll clipboard
-    const interval = setInterval(async () => {
-      if (isReadingRef.current) return;
+    const interval = setInterval(
+      async () => {
+        if (isReadingRef.current) return;
 
-      isReadingRef.current = true;
-      try {
-        const text = await readClipboard();
+        isReadingRef.current = true;
+        try {
+          const content = await readContent();
 
-        if (text && text !== previousClipboardRef.current) {
-          previousClipboardRef.current = text;
-          onCurrentClipboardUpdate(text);
-          onClipboardChange(text);
-        } else if (text) {
-          onCurrentClipboardUpdate(text);
+          if (!isContentEmpty(content)) {
+            if (!isContentEqual(content, previousContentRef.current)) {
+              previousContentRef.current = content;
+              onCurrentContentUpdate(content);
+              onClipboardChange(content);
+            } else {
+              onCurrentContentUpdate(content);
+            }
+          }
+        } finally {
+          isReadingRef.current = false;
         }
-      } finally {
-        isReadingRef.current = false;
-      }
-    }, isWayland ? 500 : 750);
+      },
+      isWayland ? 500 : 750,
+    );
 
     pollingIntervalRef.current = interval;
 
@@ -123,27 +159,28 @@ export const useClipboardMonitor = ({
     isMonitoring,
     systemInfo,
     hasWindowFocus,
-    readClipboard,
+    readContent,
     onClipboardChange,
-    onCurrentClipboardUpdate,
+    onCurrentContentUpdate,
   ]);
 
   // Initial clipboard read
   useEffect(() => {
     const initClipboard = async () => {
-      const text = await readClipboard();
-      if (text) {
-        previousClipboardRef.current = text;
-        onCurrentClipboardUpdate(text);
+      const content = await readContent();
+      if (!isContentEmpty(content)) {
+        previousContentRef.current = content;
+        onCurrentContentUpdate(content);
       }
     };
     initClipboard();
-  }, [readClipboard, onCurrentClipboardUpdate]);
+  }, [readContent, onCurrentContentUpdate]);
 
   // Window focus handling
   useEffect(() => {
     const appWindow = getCurrentWindow();
-    const { isWayland, isCosmicDataControlEnabled: hasDataControl } = systemInfo;
+    const { isWayland, isCosmicDataControlEnabled: hasDataControl } =
+      systemInfo;
 
     const handleFocus = async () => {
       setHasWindowFocus(true);
@@ -208,6 +245,6 @@ export const useClipboardMonitor = ({
   return {
     systemInfo,
     hasWindowFocus,
-    previousClipboardRef,
+    previousContentRef,
   };
 };

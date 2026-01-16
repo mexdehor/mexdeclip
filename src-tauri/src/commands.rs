@@ -43,11 +43,26 @@ pub async fn read_clipboard(manager: State<'_, ClipboardManager>) -> Result<Stri
 }
 
 #[tauri::command]
+pub async fn read_clipboard_image(
+    manager: State<'_, ClipboardManager>,
+) -> Result<Option<(String, u32, u32)>, String> {
+    manager.read_image().await
+}
+
+#[tauri::command]
 pub async fn write_clipboard(
     text: String,
     manager: State<'_, ClipboardManager>,
 ) -> Result<(), String> {
     manager.write(text).await
+}
+
+#[tauri::command]
+pub async fn write_clipboard_image(
+    base64_data: String,
+    manager: State<'_, ClipboardManager>,
+) -> Result<(), String> {
+    manager.write_image(base64_data).await
 }
 
 #[tauri::command]

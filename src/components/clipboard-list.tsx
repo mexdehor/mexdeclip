@@ -4,7 +4,7 @@ import { EmptyState } from "@/components/clipboard-empty-state";
 
 type ClipboardListProps = {
   items: ClipboardItemType[];
-  onCopy: (text: string) => void;
+  onCopy: (item: ClipboardItemType) => void;
   onDelete: (id: string) => void;
 };
 

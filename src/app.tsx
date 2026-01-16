@@ -9,31 +9,54 @@ import { ErrorBanner } from "@/components/clipboard-error-banner";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useClipboardHistory } from "@/hooks/use-clipboard-history";
 import { useClipboardMonitor } from "@/hooks/use-clipboard-monitor";
+import { ClipboardItem, ClipboardContent } from "@/types/clipboard";
 
 function App() {
   const [isMonitoring, setIsMonitoring] = useState(true);
 
-  const { read, write, reinitialize, error, dismissError } = useClipboard();
+  const { readContent, write, writeImage, reinitialize, error, dismissError } =
+    useClipboard();
 
-  const { history, setCurrentClipboard, addToHistory, deleteItem, clearAll } =
-    useClipboardHistory();
+  const {
+    history,
+    setCurrentContent,
+    addContentToHistory,
+    deleteItem,
+    clearAll,
+  } = useClipboardHistory();
 
-  const { systemInfo, previousClipboardRef } = useClipboardMonitor({
-    onClipboardChange: addToHistory,
-    onCurrentClipboardUpdate: setCurrentClipboard,
-    readClipboard: read,
+  const { systemInfo, previousContentRef } = useClipboardMonitor({
+    onClipboardChange: addContentToHistory,
+    onCurrentContentUpdate: setCurrentContent,
+    readContent,
     isMonitoring,
   });
 
   const handleCopy = useCallback(
-    async (text: string) => {
+    async (item: ClipboardItem) => {
       const wasMonitoring = isMonitoring;
       setIsMonitoring(false);
 
       try {
-        await write(text);
-        previousClipboardRef.current = text;
-        setCurrentClipboard(text);
+        if (item.type === "text" && item.text) {
+          await write(item.text);
+          const newContent: ClipboardContent = {
+            type: "text",
+            text: item.text,
+          };
+          previousContentRef.current = newContent;
+          setCurrentContent(newContent);
+        } else if (item.type === "image" && item.imageData) {
+          await writeImage(item.imageData);
+          const newContent: ClipboardContent = {
+            type: "image",
+            base64Data: item.imageData,
+            width: item.imageWidth || 0,
+            height: item.imageHeight || 0,
+          };
+          previousContentRef.current = newContent;
+          setCurrentContent(newContent);
+        }
       } finally {
         setTimeout(() => {
           if (wasMonitoring) {
@@ -44,7 +67,7 @@ function App() {
 
       await invoke("hide_window");
     },
-    [write, isMonitoring, previousClipboardRef, setCurrentClipboard],
+    [write, writeImage, isMonitoring, previousContentRef, setCurrentContent],
   );
 
   const handleRetry = useCallback(async () => {
@@ -52,13 +75,13 @@ function App() {
 
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const text = await read();
+    const content = await readContent();
 
-    if (text) {
-      previousClipboardRef.current = text;
-      setCurrentClipboard(text);
+    if (content.type !== "empty") {
+      previousContentRef.current = content;
+      setCurrentContent(content);
     }
-  }, [reinitialize, read, previousClipboardRef, setCurrentClipboard]);
+  }, [reinitialize, readContent, previousContentRef, setCurrentContent]);
 
   return (
     <div className="text-white flex flex-col h-full">

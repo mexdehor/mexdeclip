@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ClipboardError } from "@/types/clipboard";
+import { ClipboardError, ClipboardContent } from "@/types/clipboard";
 
 export const useClipboard = () => {
   const [error, setError] = useState<ClipboardError | null>(null);
@@ -32,6 +32,64 @@ export const useClipboard = () => {
     }
   }, [logError]);
 
+  const readImage = useCallback(async (): Promise<{
+    base64Data: string;
+    width: number;
+    height: number;
+  } | null> => {
+    try {
+      const result = await invoke<[string, number, number] | null>(
+        "read_clipboard_image",
+      );
+      if (result) {
+        const [base64Data, width, height] = result;
+        return { base64Data, width, height };
+      }
+      return null;
+    } catch (error) {
+      const errorMessage = logError("Failed to read clipboard image", error);
+      // Don't show error for no image available
+      if (
+        !errorMessage.includes("No selection") &&
+        !errorMessage.includes("ContentNotAvailable")
+      ) {
+        setError({
+          id: Date.now().toString(),
+          message: `Clipboard image read failed: ${errorMessage}`,
+          timestamp: new Date(),
+          retryable: true,
+        });
+      }
+      return null;
+    }
+  }, [logError]);
+
+  // Read clipboard content (text or image)
+  const readContent = useCallback(async (): Promise<ClipboardContent> => {
+    // Try to read image first (higher priority for image content)
+    try {
+      const imageResult = await readImage();
+      if (imageResult) {
+        return {
+          type: "image",
+          base64Data: imageResult.base64Data,
+          width: imageResult.width,
+          height: imageResult.height,
+        };
+      }
+    } catch {
+      // Image read failed, try text
+    }
+
+    // Fall back to text
+    const text = await read();
+    if (text) {
+      return { type: "text", text };
+    }
+
+    return { type: "empty" };
+  }, [read, readImage]);
+
   const write = useCallback(
     async (text: string): Promise<void> => {
       try {
@@ -58,7 +116,29 @@ export const useClipboard = () => {
         throw rustError;
       }
     },
-    [logError]
+    [logError],
+  );
+
+  const writeImage = useCallback(
+    async (base64Data: string): Promise<void> => {
+      try {
+        await invoke("write_clipboard_image", { base64Data });
+        setError(null);
+      } catch (error) {
+        const errorMessage = logError(
+          "Failed to write image to clipboard",
+          error,
+        );
+        setError({
+          id: Date.now().toString(),
+          message: `Failed to write image to clipboard: ${errorMessage}`,
+          timestamp: new Date(),
+          retryable: true,
+        });
+        throw error;
+      }
+    },
+    [logError],
   );
 
   const reinitialize = useCallback(async (): Promise<void> => {
@@ -83,7 +163,10 @@ export const useClipboard = () => {
 
   return {
     read,
+    readImage,
+    readContent,
     write,
+    writeImage,
     reinitialize,
     error,
     dismissError,

@@ -2014,6 +2014,8 @@ name = "mexdeclip"
 version = "1.0.0"
 dependencies = [
  "arboard",
+ "base64 0.22.1",
+ "png 0.17.16",
  "serde",
  "tauri",
  "tauri-build",
