@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   CirclePause,
   CirclePlay,
@@ -5,6 +6,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { SystemInfo } from "@/types/clipboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,11 +51,19 @@ export const ClipboardHeader = ({
   historyLimit,
   onHistoryLimitChange,
 }: ClipboardHeaderProps) => {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useHotkey("Mod+K", () => {
+    searchRef.current?.focus();
+    searchRef.current?.select();
+  }, { ignoreInputs: false });
+
   return (
     <header className="flex items-center gap-2 p-4">
       <div className="relative flex-1 min-w-0">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <Input
+          ref={searchRef}
           type="search"
           placeholder="Search clipboard…"
           aria-label="Search clipboard history"
