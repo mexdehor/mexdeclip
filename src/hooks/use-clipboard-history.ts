@@ -25,24 +25,6 @@ async function enrichAllWithEnvDetection(
   return Promise.all(items.map(enrichWithEnvDetection));
 }
 
-const debugLog = (label: string, items: ClipboardItem[]) => {
-  console.group(`[clipboard-history] ${label}`);
-  console.table(
-    items.map((i) => ({
-      id: i.id,
-      type: i.content_type,
-      sort_order: i.sort_order,
-      preview:
-        i.content_type === "text"
-          ? (i.text_content ?? "").slice(0, 40)
-          : `[image ${i.image_width}x${i.image_height}]`,
-      copy_count: i.copy_count,
-      is_favorite: i.is_favorite,
-    })),
-  );
-  console.groupEnd();
-};
-
 export const useClipboardHistory = (maxItems: number) => {
   const [history, setHistory] = useState<ClipboardItem[]>([]);
   const [currentContent, setCurrentContent] = useState<ClipboardContent>({
@@ -62,7 +44,6 @@ export const useClipboardHistory = (maxItems: number) => {
       clipboardDb.getItemCount(),
     ])
       .then(([items, count]) => {
-        debugLog("LOADED from DB", items);
         setHistory(items);
         setTotalCount(count);
         setIsLoaded(true);
@@ -84,7 +65,6 @@ export const useClipboardHistory = (maxItems: number) => {
           const existingIds = new Set(prev.map((i) => i.id));
           const unique = moreItems.filter((i) => !existingIds.has(i.id));
           const next = [...prev, ...unique];
-          debugLog("after LOAD MORE", next);
           return next;
         });
       }
@@ -115,7 +95,6 @@ export const useClipboardHistory = (maxItems: number) => {
           const updated = await clipboardDb.bumpItem(existing.id, newSortOrder);
           setHistory((prev) => {
             const next = [updated, ...prev.filter((i) => i.id !== existing.id)];
-            debugLog("after BUMP text", next);
             return next;
           });
         } catch (err) {
@@ -154,10 +133,8 @@ export const useClipboardHistory = (maxItems: number) => {
               clipboardDb.deleteItem(i.id).catch(() => {}),
             );
             const trimmed = next.slice(0, maxItems);
-            debugLog("after INSERT text (trimmed)", trimmed);
             return trimmed;
           }
-          debugLog("after INSERT text", next);
           return next;
         });
       } catch (err) {
@@ -183,7 +160,6 @@ export const useClipboardHistory = (maxItems: number) => {
           const updated = await clipboardDb.bumpItem(existing.id, newSortOrder);
           setHistory((prev) => {
             const next = [updated, ...prev.filter((i) => i.id !== existing.id)];
-            debugLog("after BUMP image", next);
             return next;
           });
         } catch (err) {
@@ -219,10 +195,8 @@ export const useClipboardHistory = (maxItems: number) => {
               clipboardDb.deleteItem(i.id).catch(() => {}),
             );
             const trimmed = next.slice(0, maxItems);
-            debugLog("after INSERT image (trimmed)", trimmed);
             return trimmed;
           }
-          debugLog("after INSERT image", next);
           return next;
         });
       } catch (err) {
@@ -299,7 +273,6 @@ export const useClipboardHistory = (maxItems: number) => {
       item.id === activeId ? updated : item,
     );
 
-    debugLog("after REORDER", newHistory);
     setHistory(newHistory);
 
     try {
@@ -400,7 +373,6 @@ export const useClipboardHistory = (maxItems: number) => {
         ...newItems,
         ...without.slice(itemIndex),
       ];
-      debugLog("after SPLIT env", next);
       return next;
     });
   }, []);
