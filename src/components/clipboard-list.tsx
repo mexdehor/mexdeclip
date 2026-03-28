@@ -72,7 +72,7 @@ export const ClipboardList = ({
   }, [isSearching, handleKeyDown]);
 
   if (items.length === 0) {
-    return <EmptyState />;
+    return <EmptyState isSearching={isSearching} />;
   }
 
   const loadMoreButton = hasMore && onLoadMore && (
