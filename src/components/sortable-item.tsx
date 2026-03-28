@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { motion } from "motion/react";
 
@@ -7,6 +8,7 @@ import { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
 export const SortableItem = ({
   item,
   index,
+  isActive,
   isCopied,
   onCopy,
   onDelete,
@@ -15,20 +17,32 @@ export const SortableItem = ({
 }: {
   item: ClipboardItemType;
   index: number;
+  isActive: boolean;
   isCopied: boolean;
   onCopy: (item: ClipboardItemType) => void;
   onDelete: (id: number) => void;
   onToggleFavorite: (id: number) => void;
   onSplitEnv?: (id: number) => void;
 }) => {
-  const { ref, handleRef, isDragging } = useSortable({
+  const { ref: sortableRef, handleRef, isDragging } = useSortable({
     id: item.id,
     index,
   });
+  const scrollRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (isActive && scrollRef.current) {
+      scrollRef.current.scrollIntoView({ block: "nearest" });
+      scrollRef.current.focus({ preventScroll: true });
+    }
+  }, [isActive]);
 
   return (
     <motion.li
-      ref={ref}
+      ref={(el) => {
+        sortableRef(el);
+        (scrollRef as React.MutableRefObject<HTMLLIElement | null>).current = el;
+      }}
       layout
       initial={{ opacity: 0, y: -8 }}
       animate={{
@@ -38,7 +52,8 @@ export const SortableItem = ({
       }}
       exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
       transition={{ type: "spring", stiffness: 500, damping: 35 }}
-      className="list-none"
+      tabIndex={isActive ? 0 : -1}
+      className={`list-none rounded-xl transition-shadow outline-none ${isActive ? "ring-2 ring-ring" : ""}`}
     >
       <ClipboardItem
         item={item}

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useHotkey, useHotkeys, useHotkeySequence } from "@tanstack/react-hotkeys";
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { AnimatePresence } from "motion/react";
@@ -6,11 +7,17 @@ import { AnimatePresence } from "motion/react";
 import { EmptyState } from "@/components/clipboard-empty-state";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ClipboardItem as ClipboardItemType, ClipboardContent } from "@/types/clipboard";
+import {
+  ClipboardItem as ClipboardItemType,
+  ClipboardContent,
+} from "@/types/clipboard";
 import { SortableItem } from "./sortable-item";
 import { SearchResultItem } from "./search-result-item";
 
-export const isItemCopied = (item: ClipboardItemType, content: ClipboardContent): boolean => {
+export const isItemCopied = (
+  item: ClipboardItemType,
+  content: ClipboardContent,
+): boolean => {
   if (content.type === "text" && item.content_type === "text") {
     return item.text_content === content.text;
   }
@@ -45,43 +52,61 @@ export const ClipboardList = ({
   hasMore = false,
   onLoadMore,
 }: ClipboardListProps) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
-  // Reset active index when items change during search
+  // Reset active index when items change
   useEffect(() => {
-    setActiveIndex(0);
+    setActiveIndex(-1);
   }, [items]);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!isSearching || items.length === 0) return;
+  const moveDown = () => {
+    if (items.length === 0) return;
+    setActiveIndex((prev) => Math.min(prev + 1, items.length - 1));
+  };
 
-      switch (e.key) {
-        case "ArrowDown":
-          e.preventDefault();
-          setActiveIndex((prev) => Math.min(prev + 1, items.length - 1));
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          setActiveIndex((prev) => Math.max(prev - 1, 0));
-          break;
-        case "Enter":
-          e.preventDefault();
-          if (items[activeIndex]) {
-            onCopy(items[activeIndex]);
-          }
-          break;
-      }
-    },
-    [isSearching, items, activeIndex, onCopy],
-  );
+  const moveUp = () => {
+    if (items.length === 0) return;
+    setActiveIndex((prev) => Math.max(prev - 1, 0));
+  };
 
-  useEffect(() => {
-    if (isSearching) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
+  const copyActive = () => {
+    if (activeIndex >= 0 && items[activeIndex]) {
+      onCopy(items[activeIndex]);
     }
-  }, [isSearching, handleKeyDown]);
+  };
+
+  // j/k navigation (ignored when input focused — default behavior)
+  useHotkey("J", moveDown);
+  useHotkey("K", moveUp);
+  useHotkey("Enter", copyActive, {
+    enabled: activeIndex >= 0,
+    ignoreInputs: false,
+  });
+
+  // Arrow keys for when list is focused (after tabbing from search)
+  useHotkey("ArrowDown", moveDown);
+  useHotkey("ArrowUp", moveUp);
+
+  // Vim: gg to go to top, G to go to bottom
+  useHotkeySequence(["G", "G"], () => {
+    if (items.length > 0) setActiveIndex(0);
+  });
+  useHotkey("Shift+G", () => {
+    if (items.length > 0) setActiveIndex(items.length - 1);
+  });
+
+  // Ctrl+1–9 to select search result by index (works even with input focused)
+  useHotkeys(
+    Array.from({ length: 9 }, (_, i) => ({
+      hotkey: `Mod+${(i + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}` as const,
+      callback: () => {
+        if (items[i]) {
+          onCopy(items[i]);
+        }
+      },
+      options: { enabled: isSearching && items.length > i },
+    })),
+  );
 
   if (items.length === 0) {
     return <EmptyState isSearching={isSearching} />;
@@ -151,6 +176,7 @@ export const ClipboardList = ({
                 key={item.id}
                 item={item}
                 index={index}
+                isActive={index === activeIndex}
                 isCopied={isItemCopied(item, currentContent)}
                 onCopy={onCopy}
                 onDelete={onDelete}

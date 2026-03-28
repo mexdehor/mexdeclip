@@ -14,6 +14,7 @@
     "npm:@semantic-release/npm@^11.0.2": "11.0.3_semantic-release@23.1.1__typescript@5.8.3__marked@12.0.2_typescript@5.8.3",
     "npm:@semantic-release/release-notes-generator@^12.1.0": "12.1.0_semantic-release@23.1.1__typescript@5.8.3__marked@12.0.2_typescript@5.8.3",
     "npm:@tailwindcss/vite@^4.1.18": "4.1.18_vite@7.3.0__picomatch@4.0.3",
+    "npm:@tanstack/react-hotkeys@~0.8.3": "0.8.3_react@19.2.3_react-dom@19.2.3__react@19.2.3",
     "npm:@tanstack/react-pacer@0.21": "0.21.0_react@19.2.3_react-dom@19.2.3__react@19.2.3",
     "npm:@tanstack/react-query@^5.95.2": "5.95.2_react@19.2.3",
     "npm:@tauri-apps/api@2": "2.9.1",
@@ -1344,6 +1345,12 @@
       "integrity": "sha512-OZI6QyULw0FI0wjgmeYzCIfbgPsOEzwJtCpa69XrfLMtNXLGnz3d/dIabk7frg0TmHo+Ah49w5I4KC7Tufwsvw==",
       "bin": true
     },
+    "@tanstack/hotkeys@0.6.3": {
+      "integrity": "sha512-4VnwjUSdk6aRnR3DGrMc0PVcnfTqKh0YD3Y2SeEKp89qIZrOO3TdvkqOj84EBfWz3KvYGLF3MyCyDalNkeS2UQ==",
+      "dependencies": [
+        "@tanstack/store"
+      ]
+    },
     "@tanstack/pacer@0.20.0": {
       "integrity": "sha512-P5jKuB0xF3DUB6jQA0XFO4ZqjKD10aoyelhMZi51j2y6ppKeea5bIIvPN3WihACqHXuZqs16HdlJPGLpCxq2iw==",
       "dependencies": [
@@ -1353,6 +1360,15 @@
     },
     "@tanstack/query-core@5.95.2": {
       "integrity": "sha512-o4T8vZHZET4Bib3jZ/tCW9/7080urD4c+0/AUaYVpIqOsr7y0reBc1oX3ttNaSW5mYyvZHctiQ/UOP2PfdmFEQ=="
+    },
+    "@tanstack/react-hotkeys@0.8.3_react@19.2.3_react-dom@19.2.3__react@19.2.3": {
+      "integrity": "sha512-gvrDN3Y40f9L+LzZMH57LpSNM9X1LGp/ac5U5Swf8bXiXfTB8V7XBSr5Rwb5zcWgU1lm9FmHyIoVd8mnZwHHiA==",
+      "dependencies": [
+        "@tanstack/hotkeys",
+        "@tanstack/react-store",
+        "react",
+        "react-dom"
+      ]
     },
     "@tanstack/react-pacer@0.21.0_react@19.2.3_react-dom@19.2.3__react@19.2.3": {
       "integrity": "sha512-RwscVPQTzqqoAnhnotu7xr9VlME96BivqHQPiVzXe9SntdJ7D5CKjh7ObErFsnDOA11OhlD+FhvH6dDit5NRnA==",
@@ -4329,6 +4345,7 @@
         "npm:@semantic-release/npm@^11.0.2",
         "npm:@semantic-release/release-notes-generator@^12.1.0",
         "npm:@tailwindcss/vite@^4.1.18",
+        "npm:@tanstack/react-hotkeys@~0.8.3",
         "npm:@tanstack/react-pacer@0.21",
         "npm:@tanstack/react-query@^5.95.2",
         "npm:@tauri-apps/api@2",

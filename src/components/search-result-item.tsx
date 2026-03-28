@@ -26,6 +26,7 @@ export const SearchResultItem = ({
   useEffect(() => {
     if (isActive && ref.current) {
       ref.current.scrollIntoView({ block: "nearest" });
+      ref.current.focus({ preventScroll: true });
     }
   }, [isActive]);
 
@@ -34,12 +35,13 @@ export const SearchResultItem = ({
       ref={ref}
       role="option"
       aria-selected={isActive}
+      tabIndex={isActive ? 0 : -1}
       layout
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
       transition={{ type: "spring", stiffness: 500, damping: 35 }}
-      className={`list-none rounded-xl transition-shadow ${
+      className={`list-none rounded-xl transition-shadow outline-none ${
         isActive ? "ring-2 ring-ring" : ""
       }`}
     >
