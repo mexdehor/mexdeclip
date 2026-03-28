@@ -1,4 +1,5 @@
 use crate::clipboard::ClipboardManager;
+use crate::db::{ClipboardItemRow, Database, InsertClipboardItemParams, UpdateSortOrderParams};
 use crate::window_state::{is_visible as window_is_visible, set_visible as window_set_visible};
 use tauri::PhysicalPosition;
 use tauri::{AppHandle, Manager, State};
@@ -202,4 +203,54 @@ pub fn get_system_theme() -> String {
     }
 
     "light".to_string()
+}
+
+// Database commands
+
+#[tauri::command]
+pub fn db_get_all_items(database: State<'_, Database>) -> Result<Vec<ClipboardItemRow>, String> {
+    database.get_all_items()
+}
+
+#[tauri::command]
+pub fn db_insert_item(
+    params: InsertClipboardItemParams,
+    database: State<'_, Database>,
+) -> Result<ClipboardItemRow, String> {
+    database.insert_item(params)
+}
+
+#[tauri::command]
+pub fn db_bump_item(
+    id: i64,
+    sort_order: String,
+    database: State<'_, Database>,
+) -> Result<ClipboardItemRow, String> {
+    database.bump_item(id, &sort_order)
+}
+
+#[tauri::command]
+pub fn db_delete_item(id: i64, database: State<'_, Database>) -> Result<(), String> {
+    database.delete_item(id)
+}
+
+#[tauri::command]
+pub fn db_clear_all(database: State<'_, Database>) -> Result<(), String> {
+    database.clear_all()
+}
+
+#[tauri::command]
+pub fn db_toggle_favorite(
+    id: i64,
+    database: State<'_, Database>,
+) -> Result<ClipboardItemRow, String> {
+    database.toggle_favorite(id)
+}
+
+#[tauri::command]
+pub fn db_update_sort_orders(
+    items: Vec<UpdateSortOrderParams>,
+    database: State<'_, Database>,
+) -> Result<(), String> {
+    database.update_sort_orders(items)
 }

@@ -26,6 +26,8 @@ function App() {
     addContentToHistory,
     deleteItem,
     clearAll,
+    toggleFavorite,
+    reorderItems,
   } = useClipboardHistory();
 
   const { systemInfo, previousContentRef } = useClipboardMonitor({
@@ -41,21 +43,21 @@ function App() {
       setIsMonitoring(false);
 
       try {
-        if (item.type === "text" && item.text) {
-          await write(item.text);
+        if (item.content_type === "text" && item.text_content) {
+          await write(item.text_content);
           const newContent: ClipboardContent = {
             type: "text",
-            text: item.text,
+            text: item.text_content,
           };
           previousContentRef.current = newContent;
           setCurrentContent(newContent);
-        } else if (item.type === "image" && item.imageData) {
-          await writeImage(item.imageData);
+        } else if (item.content_type === "image" && item.image_data) {
+          await writeImage(item.image_data);
           const newContent: ClipboardContent = {
             type: "image",
-            base64Data: item.imageData,
-            width: item.imageWidth || 0,
-            height: item.imageHeight || 0,
+            base64Data: item.image_data,
+            width: item.image_width || 0,
+            height: item.image_height || 0,
           };
           previousContentRef.current = newContent;
           setCurrentContent(newContent);
@@ -110,6 +112,8 @@ function App() {
             items={history}
             onCopy={handleCopy}
             onDelete={deleteItem}
+            onToggleFavorite={toggleFavorite}
+            onReorder={reorderItems}
           />
         </div>
       </div>

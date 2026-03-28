@@ -1,15 +1,20 @@
 export type ClipboardItemType = "text" | "image";
 
 export type ClipboardItem = {
-  id: string;
-  type: ClipboardItemType;
-  text?: string;
-  // For images: base64-encoded PNG data
-  imageData?: string;
-  // Image dimensions
-  imageWidth?: number;
-  imageHeight?: number;
-  timestamp: Date;
+  id: number;
+  content_type: ClipboardItemType;
+  text_content: string | null;
+  image_data: string | null;
+  image_width: number | null;
+  image_height: number | null;
+  char_count: number | null;
+  line_count: number | null;
+  source_app: string | null;
+  is_favorite: boolean;
+  sort_order: string;
+  copy_count: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ClipboardError = {

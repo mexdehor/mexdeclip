@@ -3,16 +3,23 @@
 
 mod clipboard;
 mod commands;
+mod db;
+mod schema;
 mod tray;
 mod window_state;
 
 use clipboard::ClipboardManager;
+use commands::{
+    db_bump_item, db_clear_all, db_delete_item, db_get_all_items, db_insert_item,
+    db_toggle_favorite, db_update_sort_orders,
+};
 use commands::{
     get_system_theme, handle_command, hide_window, is_cosmic_data_control_enabled,
     is_wayland_session, parse_command_from_args, read_clipboard, read_clipboard_image,
     reinitialize_clipboard, show_window, show_window_at_cursor, toggle_window, write_clipboard,
     write_clipboard_image,
 };
+use db::Database;
 use tauri::Manager;
 use window_state::set_visible as window_set_visible;
 
@@ -27,6 +34,17 @@ fn main() {
         }))
         .manage(ClipboardManager::new())
         .setup(move |app| {
+            // Initialize database in app data directory
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("failed to resolve app data dir");
+            std::fs::create_dir_all(&app_data_dir).expect("failed to create app data dir");
+            let db_path = app_data_dir.join("clipboard.db");
+            let database =
+                Database::new(db_path.to_str().unwrap()).expect("failed to initialize database");
+            app.manage(database);
+
             tray::setup(app)?;
             setup_main_window(app, &initial_command);
             Ok(())
@@ -43,7 +61,14 @@ fn main() {
             reinitialize_clipboard,
             is_wayland_session,
             is_cosmic_data_control_enabled,
-            get_system_theme
+            get_system_theme,
+            db_get_all_items,
+            db_insert_item,
+            db_bump_item,
+            db_delete_item,
+            db_clear_all,
+            db_toggle_favorite,
+            db_update_sort_orders,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
