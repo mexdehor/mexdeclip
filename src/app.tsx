@@ -5,6 +5,7 @@ import { useDebouncedState } from "@tanstack/react-pacer";
 
 import { ErrorBanner } from "@/components/clipboard-error-banner";
 import { ClipboardList } from "@/components/clipboard-list";
+import { ClipboardItemSkeletonList } from "@/components/clipboard-item-skeleton";
 import { ClipboardHeader } from "@/components/clipboard-window-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -30,6 +31,7 @@ function App() {
     history,
     hasMore,
     loadMore,
+    isLoaded,
     setCurrentContent,
     addContentToHistory,
     deleteItem,
@@ -123,7 +125,10 @@ function App() {
           onClearAll={clearAll}
           systemInfo={systemInfo}
           searchQuery={searchInput}
-          onSearchChange={(q) => { setSearchInput(q); setSearchQuery(q); }}
+          onSearchChange={(q) => {
+            setSearchInput(q);
+            setSearchQuery(q);
+          }}
           historyLimit={historyLimit}
           onHistoryLimitChange={setHistoryLimit}
         />
@@ -137,17 +142,21 @@ function App() {
         )}
 
         <div className="flex-1 overflow-y-auto">
-          <ClipboardList
-            items={filteredItems}
-            onCopy={handleCopy}
-            onDelete={deleteItem}
-            onToggleFavorite={toggleFavorite}
-            onReorder={reorderItems}
-            onSplitEnv={splitEnvItem}
-            isSearching={isSearching}
-            hasMore={hasMore && !isSearching}
-            onLoadMore={loadMore}
-          />
+          {!isLoaded ? (
+            <ClipboardItemSkeletonList />
+          ) : (
+            <ClipboardList
+              items={filteredItems}
+              onCopy={handleCopy}
+              onDelete={deleteItem}
+              onToggleFavorite={toggleFavorite}
+              onReorder={reorderItems}
+              onSplitEnv={splitEnvItem}
+              isSearching={isSearching}
+              hasMore={hasMore && !isSearching}
+              onLoadMore={loadMore}
+            />
+          )}
         </div>
       </div>
     </TooltipProvider>
