@@ -1,3 +1,21 @@
+# [1.4.0](https://github.com/mexdehor/mexdeclip/compare/v1.3.0...v1.4.0) (2026-03-28)
+
+
+### Features
+
+* add Ctrl+K for search ([d91c0f8](https://github.com/mexdehor/mexdeclip/commit/d91c0f8e759ade8fac18bf9cb7bf361d23a68abd))
+* add hotkeys for navigating through list ([2ba8ee2](https://github.com/mexdehor/mexdeclip/commit/2ba8ee25545118f41e5bce90311561b96bc901fc))
+* click link ([0933736](https://github.com/mexdehor/mexdeclip/commit/093373601414816f650904bc5f5eb18a69ce6850))
+* dedup with content hashing ([a7eac7e](https://github.com/mexdehor/mexdeclip/commit/a7eac7e9878f9d2bfc07dd99cf1fc5c9effbb375))
+* display color ([a62dd66](https://github.com/mexdehor/mexdeclip/commit/a62dd66d516f3f6b56a1cfbeca44ff09a9d7e1c2))
+* double click to copy ([fbe3983](https://github.com/mexdehor/mexdeclip/commit/fbe39839cb1882f61f470fc077685cbe1bc3911e))
+
+
+### Performance Improvements
+
+* show skeleton before items loaded ([3bb8069](https://github.com/mexdehor/mexdeclip/commit/3bb806927599524c38046753e25ef168dd297987))
+* use debouncer to improve search input ([b27d644](https://github.com/mexdehor/mexdeclip/commit/b27d6447cef62ab0ac5da7f168de2ebed690ddae))
+
 # [1.3.0](https://github.com/mexdehor/mexdeclip/compare/v1.2.0...v1.3.0) (2026-03-28)
 
 
