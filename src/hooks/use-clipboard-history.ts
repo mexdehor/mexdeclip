@@ -232,6 +232,7 @@ export const useClipboardHistory = (maxItems: number) => {
     try {
       await clipboardDb.deleteItem(id);
       setHistory((prev) => prev.filter((item) => item.id !== id));
+      setTotalCount((prev) => prev - 1);
     } catch (err) {
       console.error("Failed to delete clipboard item:", err);
     }
@@ -241,6 +242,7 @@ export const useClipboardHistory = (maxItems: number) => {
     try {
       await clipboardDb.clearAll();
       setHistory([]);
+      setTotalCount(0);
     } catch (err) {
       console.error("Failed to clear clipboard history:", err);
     }

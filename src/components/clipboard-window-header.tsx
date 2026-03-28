@@ -77,8 +77,7 @@ export const ClipboardHeader = ({
               <div className="px-3 py-2">
                 <Badge variant="outline">
                   Wayland
-                  {systemInfo.isCosmicDataControlEnabled &&
-                    " • Data Control ✓"}
+                  {systemInfo.isCosmicDataControlEnabled && " • Data Control ✓"}
                 </Badge>
               </div>
               <DropdownMenuSeparator />
@@ -104,7 +103,9 @@ export const ClipboardHeader = ({
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuGroup>
-                <DropdownMenuLabel>Max items to keep</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  Max items to fetch from db
+                </DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={historyLimit}
                   onValueChange={(value) =>
