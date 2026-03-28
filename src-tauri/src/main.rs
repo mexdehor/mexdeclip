@@ -28,6 +28,7 @@ fn main() {
     let initial_command = parse_command_from_args(&args).to_string();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let command = parse_command_from_args(&args);
             handle_command(app, command);

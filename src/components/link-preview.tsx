@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Check, Copy, ExternalLink, Globe, QrCode, X } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -123,7 +124,11 @@ export function LinkPreview({ url }: { url: string }) {
   }
 
   return (
-    <div className="flex gap-2.5 rounded-md border border-border/50 bg-muted/30 p-2 overflow-hidden">
+    <div
+      className="flex gap-2.5 rounded-md border border-border/50 bg-muted/30 p-2 overflow-hidden cursor-pointer hover:bg-muted/50 transition-all active:scale-[0.98] active:opacity-70"
+      onClick={() => openUrl(url)}
+      role="link"
+    >
       {data.image && (
         <img
           src={data.image}
