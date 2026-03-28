@@ -1,4 +1,11 @@
-import { Copy, Trash2, Image, GripVertical, SplitSquareHorizontal } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  Image,
+  GripVertical,
+  SplitSquareHorizontal,
+  GripHorizontal,
+} from "lucide-react";
 import { ClipboardItem as ClipboardItemType } from "@/types/clipboard";
 import { formatTime, truncateText, formatCharCount } from "@/utils/formatting";
 import { Badge } from "@/components/ui/badge";
@@ -28,13 +35,13 @@ export const ClipboardItem = ({
   const timestamp = new Date(parseInt(item.created_at));
 
   return (
-    <Card size="sm" className="gap-2 py-3 group">
-      <CardContent className="flex items-start gap-2">
-        <div className="flex items-center pt-1 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing shrink-0">
-          <GripVertical className="size-3.5" />
+    <Card className="gap-2 py-3 group">
+      <CardContent className="flex items-start gap-2 px-1 relative">
+        <div className="flex items-center absolute left-1/2 -top-2 -translate-x-1/2 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing shrink-0">
+          <GripHorizontal className="size-3.5" />
         </div>
 
-        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0 pl-2">
           {isImage ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-muted-foreground">
